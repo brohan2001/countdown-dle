@@ -1,0 +1,19 @@
+{
+  "name": "countdown",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "packages/engine-core",
+    "packages/game-state"
+  ],
+  "scripts": {
+    "test": "vitest",
+    "dev": "npm --workspace=apps/web run dev",
+    "build": "npm run build --workspaces"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4"
+  }
+}

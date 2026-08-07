@@ -1,0 +1,27 @@
+{
+  "name": "@countdown/engine-core",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./types": "./dist/types.js"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "bin": {
+    "countdown-demo": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "dev": "tsc --watch",
+    "demo": "node --input-type=module -e \"import('./dist/cli.js').then(m => m.default ? m.default() : null)\""
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4"
+  }
+}

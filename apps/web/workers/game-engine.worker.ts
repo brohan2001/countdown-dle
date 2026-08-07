@@ -30,6 +30,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     switch (type) {
       case "INIT": {
         const msg = event.data as InitMessage;
+        if (!msg.payload) throw new Error("INIT payload missing");
         dictionary = new Dictionary(msg.payload.words);
         lettersSolver = new LettersSolver(dictionary);
         numbersSolver = new NumbersSolver();
@@ -46,6 +47,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       case "GENERATE_PUZZLE": {
         if (!puzzleGenerator) throw new Error("Worker not initialized");
         const msg = event.data as GeneratePuzzleMessage;
+        if (!msg.payload) throw new Error("GENERATE_PUZZLE payload missing");
         const puzzle = await puzzleGenerator.generatePuzzle(msg.payload.playDate);
 
         response = {
@@ -59,6 +61,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       case "SOLVE_LETTERS": {
         if (!lettersSolver) throw new Error("Worker not initialized");
         const msg = event.data as SolveLettersMessage;
+        if (!msg.payload) throw new Error("SOLVE_LETTERS payload missing");
         const result = await lettersSolver.solveAndScore(msg.payload.letters);
 
         response = {
@@ -72,6 +75,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       case "SOLVE_NUMBERS": {
         if (!numbersSolver) throw new Error("Worker not initialized");
         const msg = event.data as SolveNumbersMessage;
+        if (!msg.payload) throw new Error("SOLVE_NUMBERS payload missing");
         const solveResult = numbersSolver.solve(msg.payload.numbers, msg.payload.target);
 
         response = {
@@ -85,6 +89,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       case "SOLVE_CONUNDRUM": {
         if (!conundrumSolver) throw new Error("Worker not initialized");
         const msg = event.data as SolveConundrumMessage;
+        if (!msg.payload) throw new Error("SOLVE_CONUNDRUM payload missing");
         const solutions = conundrumSolver.getAllNineLetterSolutions(msg.payload.anagram);
 
         response = {

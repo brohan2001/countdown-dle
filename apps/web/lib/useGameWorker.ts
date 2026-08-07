@@ -94,14 +94,14 @@ export function useGameWorker() {
         "GENERATE_PUZZLE",
         { playDate }
       );
-      return response.payload.puzzle;
+      return (response.payload as any).puzzle;
     },
 
     async solveLetters(letters: string[]): Promise<LettersResult | null> {
       const response = await sendMessage<SolveLettersResponse>("SOLVE_LETTERS", {
         letters,
       });
-      return response.payload.result;
+      return (response.payload as any).result;
     },
 
     async solveNumbers(
@@ -112,7 +112,7 @@ export function useGameWorker() {
         numbers,
         target,
       });
-      return response.payload.result;
+      return (response.payload as any).result;
     },
 
     async solveConundrum(anagram: string): Promise<string[]> {
@@ -120,7 +120,7 @@ export function useGameWorker() {
         "SOLVE_CONUNDRUM",
         { anagram }
       );
-      return response.payload.solutions;
+      return (response.payload as any).solutions;
     },
   };
 }

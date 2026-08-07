@@ -13,29 +13,24 @@ export interface WorkerMessage<T> {
 }
 
 // Request messages (main thread → worker)
-export interface InitMessage extends WorkerMessage<void> {
+export interface InitMessage extends WorkerMessage<{ words: string[] }> {
   type: "INIT";
-  payload: { words: string[] };
 }
 
-export interface GeneratePuzzleMessage extends WorkerMessage<void> {
+export interface GeneratePuzzleMessage extends WorkerMessage<{ playDate: string }> {
   type: "GENERATE_PUZZLE";
-  payload: { playDate: string };
 }
 
-export interface SolveLettersMessage extends WorkerMessage<void> {
+export interface SolveLettersMessage extends WorkerMessage<{ letters: string[] }> {
   type: "SOLVE_LETTERS";
-  payload: { letters: string[] };
 }
 
-export interface SolveNumbersMessage extends WorkerMessage<void> {
+export interface SolveNumbersMessage extends WorkerMessage<{ numbers: number[]; target: number }> {
   type: "SOLVE_NUMBERS";
-  payload: { numbers: number[]; target: number };
 }
 
-export interface SolveConundrumMessage extends WorkerMessage<void> {
+export interface SolveConundrumMessage extends WorkerMessage<{ anagram: string }> {
   type: "SOLVE_CONUNDRUM";
-  payload: { anagram: string };
 }
 
 export type WorkerRequest =
@@ -50,30 +45,27 @@ export interface InitResponse extends WorkerMessage<void> {
   type: "INIT_RESPONSE";
 }
 
-export interface GeneratePuzzleResponse extends WorkerMessage<void> {
+export interface GeneratePuzzleResponse extends WorkerMessage<{ puzzle: Puzzle }> {
   type: "GENERATE_PUZZLE_RESPONSE";
-  payload: { puzzle: Puzzle };
 }
 
-export interface SolveLettersResponse extends WorkerMessage<void> {
+export interface SolveLettersResponse extends WorkerMessage<{ result: LettersResult | null }> {
   type: "SOLVE_LETTERS_RESPONSE";
-  payload: { result: LettersResult | null };
 }
 
-export interface SolveNumbersResponse extends WorkerMessage<void> {
-  type: "SOLVE_NUMBERS_RESPONSE";
-  payload: {
+export interface SolveNumbersResponse
+  extends WorkerMessage<{
     result: {
       value: number;
       equation: string;
       distance: number;
     };
-  };
+  }> {
+  type: "SOLVE_NUMBERS_RESPONSE";
 }
 
-export interface SolveConundrumResponse extends WorkerMessage<void> {
+export interface SolveConundrumResponse extends WorkerMessage<{ solutions: string[] }> {
   type: "SOLVE_CONUNDRUM_RESPONSE";
-  payload: { solutions: string[] };
 }
 
 export type WorkerResponse =

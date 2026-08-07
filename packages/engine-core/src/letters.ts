@@ -1,26 +1,22 @@
-import { Dictionary } from "./dictionary.js";
+import { Dictionary, canFormWord } from "./dictionary.js";
 import { LettersResult } from "./types.js";
+
+export function scoreWord(length: number): number {
+  if (length < 2) return 0;
+  if (length <= 4) return length;
+  if (length === 5) return 7;
+  if (length === 6) return 8;
+  if (length === 7) return 9;
+  if (length === 8) return 9;
+  return 10; // 9 letters
+}
 
 export class LettersSolver {
   constructor(private dictionary: Dictionary) {}
 
   validateWord(word: string, availableLetters: string[]): boolean {
     const upperWord = word.toUpperCase();
-    if (!this.dictionary.isValid(upperWord)) return false;
-
-    const letterCounts = new Map<string, number>();
-    for (const letter of availableLetters) {
-      const upper = letter.toUpperCase();
-      letterCounts.set(upper, (letterCounts.get(upper) || 0) + 1);
-    }
-
-    for (const char of upperWord) {
-      const count = letterCounts.get(char) || 0;
-      if (count <= 0) return false;
-      letterCounts.set(char, count - 1);
-    }
-
-    return true;
+    return this.dictionary.isValid(upperWord) && canFormWord(word, availableLetters);
   }
 
   solve(letters: string[]): { word: string; length: number } | null {
@@ -34,13 +30,7 @@ export class LettersSolver {
   }
 
   scoreWord(length: number): number {
-    if (length < 2) return 0;
-    if (length <= 4) return length;
-    if (length === 5) return 7;
-    if (length === 6) return 8;
-    if (length === 7) return 9;
-    if (length === 8) return 9;
-    return 10; // 9 letters
+    return scoreWord(length);
   }
 
   async solveAndScore(

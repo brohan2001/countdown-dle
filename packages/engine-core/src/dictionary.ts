@@ -3,6 +3,23 @@ export interface TrieNode {
   isEnd: boolean;
 }
 
+export function canFormWord(word: string, availableLetters: string[]): boolean {
+  const upperWord = word.toUpperCase();
+  const letterCounts = new Map<string, number>();
+  for (const letter of availableLetters) {
+    const upper = letter.toUpperCase();
+    letterCounts.set(upper, (letterCounts.get(upper) || 0) + 1);
+  }
+
+  for (const char of upperWord) {
+    const count = letterCounts.get(char) || 0;
+    if (count <= 0) return false;
+    letterCounts.set(char, count - 1);
+  }
+
+  return true;
+}
+
 export class Dictionary {
   private root: TrieNode;
   private wordSet: Set<string>;

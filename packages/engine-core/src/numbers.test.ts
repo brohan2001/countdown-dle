@@ -61,4 +61,18 @@ describe("NumbersSolver", () => {
     expect(result?.exact).toBe(false);
     expect(result?.score).toBe(0);
   });
+
+  it("equation string evaluates to reported value", () => {
+    const result = solver.solve([75, 50, 25, 10, 5, 1], 100);
+    // Verify the equation string is valid and evaluates to the result value
+    expect(result.equation).toBeDefined();
+    try {
+      const evaluated = Function('"use strict"; return (' + result.equation + ")")();
+      expect(evaluated).toBe(result.value);
+      expect(Number.isInteger(evaluated)).toBe(true);
+      expect(evaluated).toBeGreaterThan(0);
+    } catch (e) {
+      throw new Error(`Equation "${result.equation}" failed to evaluate: ${e}`);
+    }
+  });
 });

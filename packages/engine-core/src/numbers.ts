@@ -12,6 +12,14 @@ interface SolverResult {
   distance: number;
 }
 
+export function scoreNumbers(exact: boolean, distance: number): number {
+  if (exact) return 10;
+  if (distance <= 5) return 7;
+  if (distance <= 10) return 5;
+  if (distance <= 50) return 3;
+  return 0;
+}
+
 export class NumbersSolver {
   private memo: Map<string, SolverResult>;
 
@@ -81,20 +89,22 @@ export class NumbersSolver {
       }
     }
 
+    const initialValue = numbers[0] || 0;
     let bestResult: SolverResult = {
-      value: numbers[0] || 0,
-      equation: numbers[0]?.toString() || "0",
-      distance: Math.abs((numbers[0] || 0) - target),
+      value: initialValue,
+      equation: initialValue.toString(),
+      distance: Math.abs(initialValue - target),
     };
 
-    this.dfs(numbers, target, bestResult);
+    const availableWithExpr = numbers.map(n => ({ value: n, expr: n.toString() }));
+    this.dfs(availableWithExpr, target, bestResult);
 
     this.memo.set(key, bestResult);
     return bestResult;
   }
 
   private dfs(
-    available: number[],
+    available: Array<{ value: number; expr: string }>,
     target: number,
     best: SolverResult
   ): void {
@@ -102,12 +112,12 @@ export class NumbersSolver {
 
     for (let i = 0; i < available.length; i++) {
       const current = available[i];
-      const distance = Math.abs(current - target);
+      const distance = Math.abs(current.value - target);
 
       if (distance < best.distance) {
         best.distance = distance;
-        best.value = current;
-        best.equation = current.toString();
+        best.value = current.value;
+        best.equation = current.expr;
       }
 
       if (distance === 0) return;
@@ -115,10 +125,10 @@ export class NumbersSolver {
       const remaining = available.filter((_, idx) => idx !== i);
       for (let j = 0; j < remaining.length; j++) {
         const other = remaining[j];
-        const results = this.applyOperators(current, other);
+        const results = this.applyOperators(current.value, other.value, current.expr, other.expr);
 
         for (const result of results) {
-          if (result <= 0) continue;
+          if (result.value <= 0 || result.value > 1000000) continue;
 
           const newAvailable = remaining
             .filter((_, idx) => idx !== j)
@@ -129,21 +139,22 @@ export class NumbersSolver {
     }
   }
 
-  private applyOperators(a: number, b: number): number[] {
-    const results = [];
-    results.push(a + b);
-    if (a >= b) results.push(a - b);
-    results.push(a * b);
-    if (b !== 0 && a % b === 0) results.push(a / b);
+  private applyOperators(
+    a: number,
+    b: number,
+    aExpr: string,
+    bExpr: string
+  ): Array<{ value: number; expr: string }> {
+    const results: Array<{ value: number; expr: string }> = [];
+    results.push({ value: a + b, expr: `(${aExpr}+${bExpr})` });
+    if (a >= b) results.push({ value: a - b, expr: `(${aExpr}-${bExpr})` });
+    results.push({ value: a * b, expr: `(${aExpr}*${bExpr})` });
+    if (b !== 0 && a % b === 0) results.push({ value: a / b, expr: `(${aExpr}/${bExpr})` });
     return results;
   }
 
   scoreNumbers(exact: boolean, distance: number): number {
-    if (exact) return 10;
-    if (distance <= 5) return 7;
-    if (distance <= 10) return 5;
-    if (distance <= 50) return 3;
-    return 0;
+    return scoreNumbers(exact, distance);
   }
 
   async solveAndScore(

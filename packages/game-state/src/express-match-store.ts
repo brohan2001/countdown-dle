@@ -1,95 +1,23 @@
 import { create } from "zustand";
 import { ExpressMatchState, LettersRoundState, NumbersRoundState, ConundrumRoundState } from "./types.js";
+import { LettersResult, NumbersResult, ConundrumResult } from "@countdown/engine-core";
 
 interface ExpressMatchStore extends ExpressMatchState {
   startMatch: (letters: string[], numbers: number[], target: number, conundrum: string[]) => void;
   nextRound: () => void;
   completeMatch: () => void;
+  completeRound: (score: number, result: LettersResult | NumbersResult | ConundrumResult) => void;
   getCurrentRound: () => LettersRoundState | NumbersRoundState | ConundrumRoundState | null;
   updateCurrentRound: (updates: Partial<LettersRoundState | NumbersRoundState | ConundrumRoundState>) => void;
 }
 
-export const createExpressMatch = (): ExpressMatchStore => {
-  const initialState: ExpressMatchState = {
-    status: "not_started",
-    rounds: [],
-    currentRoundIndex: 0,
-    totalScore: 0,
-    startedAt: 0,
-  };
 
-  return {
-    ...initialState,
-    startMatch: (letters: string[], numbers: number[], target: number, conundrum: string[]) => {
-      const state = useExpressMatch.getState();
-      const newRounds: (LettersRoundState | NumbersRoundState | ConundrumRoundState)[] = [
-        {
-          type: "letters",
-          state: "idle",
-          letters,
-          playerWord: "",
-          timeRemaining: 30000,
-        },
-        {
-          type: "numbers",
-          state: "idle",
-          numbers,
-          target,
-          playerEquation: "",
-          selectedTiles: [],
-          timeRemaining: 30000,
-        },
-        {
-          type: "conundrum",
-          state: "idle",
-          letters: conundrum,
-          playerSolution: "",
-          timeRemaining: 30000,
-        },
-      ];
-
-      useExpressMatch.setState({
-        status: "in_progress",
-        rounds: newRounds,
-        currentRoundIndex: 0,
-        totalScore: 0,
-        startedAt: Date.now(),
-      });
-    },
-    nextRound: () => {
-      const state = useExpressMatch.getState();
-      if (state.currentRoundIndex < state.rounds.length - 1) {
-        useExpressMatch.setState({
-          currentRoundIndex: state.currentRoundIndex + 1,
-        });
-      }
-    },
-    completeMatch: () => {
-      useExpressMatch.setState({
-        status: "completed",
-        completedAt: Date.now(),
-      });
-    },
-    getCurrentRound: () => {
-      const state = useExpressMatch.getState();
-      return state.rounds[state.currentRoundIndex] || null;
-    },
-    updateCurrentRound: (updates) => {
-      const state = useExpressMatch.getState();
-      const newRounds = [...state.rounds];
-      const current = newRounds[state.currentRoundIndex];
-      if (current) {
-        newRounds[state.currentRoundIndex] = { ...current, ...updates } as typeof current;
-      }
-      useExpressMatch.setState({ rounds: newRounds });
-    },
-  };
-};
-
-export const useExpressMatch = create<ExpressMatchStore>((set, get) => {
-  const initial = createExpressMatch();
-  return {
-    ...initial,
+export const useExpressMatch = create<ExpressMatchStore>((set, get) => ({
+  status: "not_started",
+  rounds: [],
+  currentRoundIndex: 0,
+  totalScore: 0,
+  startedAt: 0,
     startMatch: (letters, numbers, target, conundrum) => {
       const newRounds = [
         {
@@ -136,6 +64,22 @@ export const useExpressMatch = create<ExpressMatchStore>((set, get) => {
         completedAt: Date.now(),
       });
     },
+    completeRound: (score: number, result: LettersResult | NumbersResult | ConundrumResult) => {
+      const state = get();
+      const newRounds = [...state.rounds];
+      const current = newRounds[state.currentRoundIndex];
+      if (current) {
+        newRounds[state.currentRoundIndex] = {
+          ...current,
+          state: "scored",
+          result,
+        } as typeof current;
+      }
+      set({
+        rounds: newRounds,
+        totalScore: state.totalScore + score,
+      });
+    },
     getCurrentRound: () => {
       const state = get();
       return state.rounds[state.currentRoundIndex] || null;
@@ -149,5 +93,4 @@ export const useExpressMatch = create<ExpressMatchStore>((set, get) => {
       }
       set({ rounds: newRounds });
     },
-  };
-});
+}));

@@ -9,6 +9,7 @@ interface ExpressMatchStore extends ExpressMatchState {
   completeRound: (score: number, result: LettersResult | NumbersResult | ConundrumResult) => void;
   getCurrentRound: () => LettersRoundState | NumbersRoundState | ConundrumRoundState | null;
   updateCurrentRound: (updates: Partial<LettersRoundState | NumbersRoundState | ConundrumRoundState>) => void;
+  reset: () => void;
 }
 
 
@@ -92,5 +93,15 @@ export const useExpressMatch = create<ExpressMatchStore>((set, get) => ({
         newRounds[state.currentRoundIndex] = { ...current, ...updates } as typeof current;
       }
       set({ rounds: newRounds });
+    },
+    reset: () => {
+      set({
+        status: "not_started",
+        rounds: [],
+        currentRoundIndex: 0,
+        totalScore: 0,
+        startedAt: 0,
+        completedAt: undefined,
+      });
     },
 }));

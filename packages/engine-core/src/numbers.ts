@@ -1,5 +1,42 @@
 import { NumbersResult } from "./types.js";
 
+export function validateExpression(expr: string, availableNumbers: number[]): boolean {
+  const trimmed = expr.trim();
+
+  const numberPattern =
+    /^(\d+)([\+\-\*/]\d+)*$|^\((\d+)([\+\-\*/](\d|\(.*\)))+\)$/;
+  if (!numberPattern.test(trimmed)) return false;
+
+  const usedNumbers = new Set<string>();
+  const matches = trimmed.match(/\d+/g) || [];
+
+  for (const match of matches) {
+    const num = parseInt(match, 10);
+    let found = false;
+    for (let i = 0; i < availableNumbers.length; i++) {
+      if (
+        availableNumbers[i] === num &&
+        !usedNumbers.has(i.toString())
+      ) {
+        usedNumbers.add(i.toString());
+        found = true;
+        break;
+      }
+    }
+    if (!found) return false;
+  }
+
+  try {
+    const cleaned = trimmed.replace(/[^\d\+\-\*/\(\)]/g, "");
+    if (!/^[\d\+\-\*/\(\)]+$/.test(cleaned)) return false;
+
+    const result = Function('"use strict"; return (' + cleaned + ")")();
+    return result !== null && Number.isInteger(result) && result > 0;
+  } catch {
+    return false;
+  }
+}
+
 interface NumberState {
   available: number[];
   value: number;

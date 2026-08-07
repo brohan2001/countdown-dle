@@ -21,7 +21,9 @@ body {
   }
 }
 
-/* Dyslexic-friendly font option */
+/* Dyslexic-friendly font option: uses serif + increased letter-spacing for clarity */
 body.font-dyslexic {
-  font-family: "OpenDyslexic", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: 0.05em;
+  line-height: 1.8;
 }

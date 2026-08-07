@@ -23,13 +23,14 @@ export class ConundrumSolver {
   }
 
   solve(anagram: string): string | null {
-    const words = this.dictionary.getAllWordsFromLetters([...anagram]);
-    if (words.length === 0) return null;
-
-    const nineLetterWords = words.filter((w) => w.length === 9);
+    const nineLetterWords = this.getAllNineLetterSolutions(anagram);
     if (nineLetterWords.length === 0) return null;
-
     return nineLetterWords[0];
+  }
+
+  getAllNineLetterSolutions(anagram: string): string[] {
+    const words = this.dictionary.getAllWordsFromLetters([...anagram]);
+    return words.filter((w) => w.length === 9);
   }
 
   async solveAndScore(

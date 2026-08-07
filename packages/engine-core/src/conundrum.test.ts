@@ -50,4 +50,10 @@ describe("ConundrumSolver", () => {
     expect(result?.found).toBe(false);
     expect(result?.score).toBe(0);
   });
+
+  it("returns all 9-letter solutions", () => {
+    const solutions = solver.getAllNineLetterSolutions("UACTIONDE");
+    expect(solutions.length).toBeGreaterThan(0);
+    expect(solutions[0].length).toBe(9);
+  });
 });

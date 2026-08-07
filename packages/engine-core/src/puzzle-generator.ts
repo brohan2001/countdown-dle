@@ -10,6 +10,7 @@ export interface QualityReport {
   numbersExact: boolean;
   numbersClosestDistance: number;
   conundrumUnique: boolean;
+  conundrumSolutionCount: number;
   passed: boolean;
 }
 
@@ -128,21 +129,24 @@ export class PuzzleGenerator {
       puzzle.numbersRound.numbers,
       puzzle.numbersRound.target
     );
-    const conundrumSolution = this.conundrumSolver.solve(
-      puzzle.conundrumRound.letters.join("")
+
+    const conundrumAnagram = puzzle.conundrumRound.letters.join("");
+    const conundrumSolutions = this.conundrumSolver.getAllNineLetterSolutions(
+      conundrumAnagram
     );
 
     const passed =
       (lettersSolution?.length || 0) >= 5 &&
       numbersSolution.distance <= 5 &&
-      conundrumSolution !== null;
+      conundrumSolutions.length === 1;
 
     return {
       longestWordFound: lettersSolution?.word || "",
       longestWordLength: lettersSolution?.length || 0,
       numbersExact: numbersSolution.distance === 0,
       numbersClosestDistance: numbersSolution.distance,
-      conundrumUnique: conundrumSolution !== null,
+      conundrumUnique: conundrumSolutions.length === 1,
+      conundrumSolutionCount: conundrumSolutions.length,
       passed,
     };
   }

@@ -57,9 +57,9 @@ npm test -- --watch # Run tests in watch mode
 
 **Deliverables:**
 - `engine-core` package with runtime-agnostic solver & validator implementations
-  - **Dictionary:** Trie-based word lookup supporting up to 9 letters
+  - **Dictionary:** Trie-based word lookup supporting up to 9 letters, CSW21 word list
   - **Letters solver:** DFS-based longest word finder with optimal scoring
-  - **Numbers solver:** Memoized DFS for exact/closest arithmetic solutions
+  - **Numbers solver:** Memoized DFS for exact/closest arithmetic solutions with equation derivation
   - **Conundrum solver:** Anagram validation and 9-letter solution finder
   - **Puzzle generator:** Randomized puzzles with quality gates (solvability checks)
 - Full unit test coverage for all solvers and validators
@@ -70,32 +70,76 @@ npm test -- --watch # Run tests in watch mode
 npm test  # Run all engine-core & game-state tests
 ```
 
-### Phase 2 — UI/UX & Single-Player Polish (In Progress)
+### Phase 2 ✅ — UI/UX & Single-Player Polish (Complete)
 
-**Roadmap:**
-- Next.js Express Daily mode end-to-end UI
-- Tap-to-merge tile interaction + keyboard fallback for numbers
-- Letters & conundrum UI
-- Web Worker integration for solver performance
-- Theme toggle, dyslexic font, emoji share summary
-- Guest persistence via IndexedDB/localStorage
+**Deliverables:**
+- Full Express Daily mode end-to-end UI in Next.js 14
+- **Components:**
+  - RoundTimer: 30s countdown with color-coded urgency + race-condition guard
+  - LettersRound: Tile display + text input with async dictionary validation
+  - NumbersRound: Undo-stack UI, tap-to-merge + keyboard expression bar, real-time tile dimming
+  - ConundrumRound: Animated 9-letter anagram tiles + text input
+  - ScoreSummary: End-of-match results + Wordle-style emoji share grid
+  - SolverBreakdownModal: Shows optimal solutions when player misses
+  - DictionaryModal: Live word definition lookup (dictionaryapi.dev)
+  - SettingsMenu: Theme toggle (light/dark) + dyslexic-font toggle
+- Web Worker integration for solver offloading (non-blocking solve)
+- localStorage-based guest match persistence (today-only scope)
+- TypeScript full type safety, zero errors
+- Production build passes, dev server ready on http://localhost:3000
 
-### Phase 3 — Backend & Archive (Future)
+**Test:**
+```bash
+npm run dev  # Visit http://localhost:3000 to play
+```
 
-**Scope:**
-- Supabase Auth + Postgres schema
-- Daily puzzle generation + curation
-- Calendar archive & streaks
-- Spoiler-gated daily forum
-- Practice/Custom challenge modes
+### Phase 3 ✅ — Backend & Archive (Complete)
+
+**Deliverables:**
+- **Supabase PostgreSQL Schema:**
+  - `puzzles`: Daily seeded rounds with status (draft/published)
+  - `profiles`: User settings (theme, dyslexic font)
+  - `game_results`: Scores per puzzle/user/mode (express, practice, custom, duel, full_show)
+  - `streaks`: Daily play tracking (current + longest)
+  - `custom_challenges`: User-generated challenge URLs
+  - `duels`: Async multiplayer matches
+  - `forum_threads`: Spoiler-gated discussion per puzzle
+  - `forum_posts`: Community discussion with RLS enforcement
+- **Row Level Security (RLS):** All tables enforce privacy policies at database level
+- **Authentication:** Email/password signup + login with profile creation
+- **Pages:**
+  - `/auth`: Signup/login UI with guest fallback
+  - `/account`: Profile settings + streak display
+  - `/forum`: Spoiler-gated puzzle discussions (must complete to post)
+  - `/stats`: Global leaderboards + player rankings
+- **Navigation:** Persistent header with auth-aware buttons
+- **API Routes:**
+  - `POST /api/game-results`: Submit game score
+  - `GET /api/game-results`: Fetch player results
+  - `GET /api/puzzles/daily`: Fetch published puzzle
+- **Edge Functions:** Daily puzzle generator (Deno/TypeScript)
+- **Setup Guide:** `PHASE_3_SETUP.md` with complete local dev instructions
+
+**Test:**
+```bash
+supabase start           # Start local Supabase (requires Docker)
+supabase db push         # Apply schema migrations
+cp apps/web/.env.local.example apps/web/.env.local
+npm install
+npm run dev              # Dev server connects to local Supabase
+```
 
 ### Phase 4 — Async Multiplayer & Community (Future)
 
 **Scope:**
-- Async Duels (shared link, same board)
+- Integrate game results → `/api/game-results` (save scores to database)
+- Fetch puzzles from database → `/api/puzzles/daily` (instead of Worker generation)
+- Real puzzle generation via Edge Function (integrate PuzzleGenerator)
+- Guest → Account merge on signup
+- Practice mode (replay past puzzles)
+- Custom challenges + duels (async multiplayer)
 - Full Show mode (15 rounds)
 - Community stats aggregation
-- (Deferred) Real-time Ranked ELO
 
 ---
 

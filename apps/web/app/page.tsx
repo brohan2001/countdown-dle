@@ -15,17 +15,24 @@ export default function Home() {
   useEffect(() => {
     const initializeGame = async () => {
       try {
-        // Load word set
+        // Load word set for main-thread validation
         await getWordSet();
 
-        // Initialize worker with words
+        // Initialize worker with words (for solver performance)
         const words = await fetch("/words.txt").then((res) => res.text());
         const wordList = words.split("\n").filter((w) => w.trim());
         await gameWorker.init(wordList);
 
-        // Generate today's puzzle
-        const today = new Date();
-        const puzzle = await gameWorker.generatePuzzle(today.toISOString().split("T")[0]);
+        // Fetch today's puzzle from API (generates if missing)
+        const today = new Date().toISOString().split("T")[0];
+        const puzzleResponse = await fetch(`/api/puzzles/daily?date=${today}`);
+
+        if (!puzzleResponse.ok) {
+          throw new Error(`Failed to fetch puzzle: ${puzzleResponse.statusText}`);
+        }
+
+        const puzzleData = await puzzleResponse.json();
+        const puzzle = puzzleData.data;
 
         // Start the match
         match.startMatch(

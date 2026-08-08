@@ -52,6 +52,23 @@ export default function AuthPage() {
 
           if (profileError) throw profileError;
 
+          // Merge guest results if any
+          const guestId = localStorage.getItem("countdown_guest_id");
+          if (guestId) {
+            try {
+              await fetch("/api/auth/merge-guest", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ guestId }),
+              });
+              // Clear guest ID after merge
+              localStorage.removeItem("countdown_guest_id");
+            } catch (mergeErr) {
+              console.warn("Failed to merge guest results:", mergeErr);
+              // Don't block the flow if merge fails
+            }
+          }
+
           setSuccess("Account created! Redirecting...");
           setTimeout(() => router.push("/"), 1500);
         }

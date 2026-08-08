@@ -1,11 +1,19 @@
 import { createAdminClient } from "@/lib/supabase";
+import { scoreWord, scoreNumbers } from "@countdown/engine-core";
 import { NextRequest, NextResponse } from "next/server";
+
+interface RoundResult {
+  type: "letters" | "numbers" | "conundrum";
+  score?: number;
+  [key: string]: any;
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, guestId, puzzleId, mode, roundResults, totalScore, emojiSummary } = body;
+    const { userId, guestId, puzzleId, mode, roundResults, emojiSummary } = body;
 
+    // Validation
     if (!puzzleId || !roundResults) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -20,26 +28,72 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!Array.isArray(roundResults) || roundResults.length !== 3) {
+      return NextResponse.json(
+        { error: "roundResults must be an array of 3 round results" },
+        { status: 400 }
+      );
+    }
+
     const admin = createAdminClient();
 
-    const { data, error } = await admin
+    // Server-side validation: recalculate scores to prevent tampering
+    let totalScore = 0;
+    const validatedRounds = roundResults.map((result: RoundResult, idx: number) => {
+      const type = idx === 0 ? "letters" : idx === 1 ? "numbers" : "conundrum";
+
+      if (type === "letters" && "word" in result) {
+        const word = (result.word as string)?.toUpperCase() || "";
+        const length = word.length;
+        const score =
+          length < 2
+            ? 0
+            : length <= 4
+              ? length
+              : length === 5
+                ? 7
+                : length === 6
+                  ? 8
+                  : length <= 9
+                    ? 9 + (length - 7)
+                    : 0;
+        totalScore += score;
+        return { ...result, score };
+      } else if (type === "numbers" && "distance" in result) {
+        const distance = (result.distance as number) ?? 999;
+        const exact = distance === 0;
+        const score = exact ? 10 : distance <= 5 ? 7 : distance <= 10 ? 5 : distance <= 50 ? 3 : 0;
+        totalScore += score;
+        return { ...result, score, exact };
+      } else if (type === "conundrum" && "found" in result) {
+        const found = result.found === true;
+        const score = found ? 10 : 0;
+        totalScore += score;
+        return { ...result, score };
+      }
+
+      return result;
+    });
+
+    // Insert result
+    const { data, error: insertError } = await admin
       .from("game_results")
       .insert({
         user_id: userId || undefined,
         guest_id: guestId || undefined,
         puzzle_id: puzzleId,
         mode: mode || "express",
-        round_results: roundResults,
-        total_score: totalScore || 0,
+        round_results: validatedRounds,
+        total_score: totalScore,
         emoji_summary: emojiSummary || null,
       })
       .select()
       .single();
 
-    if (error) {
-      console.error("Supabase error:", error);
+    if (insertError) {
+      console.error("Supabase error:", insertError);
       return NextResponse.json(
-        { error: error.message },
+        { error: insertError.message },
         { status: 400 }
       );
     }
@@ -94,11 +148,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...data,
+        totalScore,
+        validatedRounds,
+      },
+    });
   } catch (error) {
     console.error("Error saving game result:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 }
     );
   }

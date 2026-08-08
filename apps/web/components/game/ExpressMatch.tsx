@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useExpressMatch } from "@countdown/game-state";
 import { LettersResult, NumbersResult, ConundrumResult } from "@countdown/engine-core";
+import { supabase } from "@/lib/supabase";
 import { useGameWorker } from "@/lib/useGameWorker";
+import { generateEmojiSummary } from "@/lib/emojiSummary";
 import { LettersRound } from "./LettersRound";
 import { NumbersRound } from "./NumbersRound";
 import { ConundrumRound } from "./ConundrumRound";
@@ -18,8 +20,9 @@ export function ExpressMatch() {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [selectedWord, setSelectedWord] = useState("");
   const [showDictionary, setShowDictionary] = useState(false);
-  const [solvePromise, setSolvePromise] = useState<Promise<any> | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const matchStartTime = useRef(Date.now());
+  const puzzleId = useRef<string>(`daily-${new Date().toISOString().split("T")[0]}`);
 
   const currentRound = match.rounds[match.currentRoundIndex];
   const isMatchComplete = match.status === "completed";
@@ -66,9 +69,68 @@ export function ExpressMatch() {
       if (match.currentRoundIndex < match.rounds.length - 1) {
         match.nextRound();
       } else {
-        match.completeMatch();
+        // Match complete - submit results to database
+        submitMatchResults();
       }
     }, 1000);
+  };
+
+  const submitMatchResults = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      let userId: string | null = null;
+      let guestId: string | null = null;
+
+      if (user) {
+        userId = user.id;
+      } else {
+        guestId = localStorage.getItem("countdown_guest_id") ||
+          `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        if (!localStorage.getItem("countdown_guest_id")) {
+          localStorage.setItem("countdown_guest_id", guestId);
+        }
+      }
+
+      const roundResults = match.rounds
+        .map((round) => round.result)
+        .filter(Boolean);
+
+      const emojiSummary = generateEmojiSummary(
+        roundResults[0] as any,
+        roundResults[1] as any,
+        roundResults[2] as any
+      );
+
+      const response = await fetch("/api/game-results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userId || undefined,
+          guestId: guestId || undefined,
+          puzzleId: puzzleId.current,
+          mode: "express",
+          roundResults,
+          emojiSummary,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || `Failed to submit results: ${response.statusText}`);
+      }
+
+      match.completeMatch();
+    } catch (err) {
+      console.error("Error submitting match results:", err);
+      // Still complete the match even if submission fails
+      match.completeMatch();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handlePlayAgain = () => {
@@ -188,6 +250,15 @@ export function ExpressMatch() {
         onClose={() => setShowDictionary(false)}
         word={selectedWord}
       />
+
+      {submitting && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-lg p-6 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3" />
+            <p className="text-slate-200">Saving your score...</p>
+          </div>
+        </div>
+      )}
     </>
   );
 }
